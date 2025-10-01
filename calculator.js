@@ -13,18 +13,24 @@ let currentNumber = "";
 // number buttons
 digits.forEach(button => {
     button.addEventListener("click", () => {
-        const digit = button.textContent;
+        let digit = button.textContent;
 
-        if (digit === "." && currentNumber.includes(".")) return;
-
+        if (digit == ".") {
+            if (currentNumber.includes(".")) return;
+            if (currentNumber === "") digit = "0.";
+        }
         if (currentNumber.length >= MAX_LENGTH) return;
 
         currentNumber += digit;
 
-        if (firstNumber && operator) {
-            display.textContent = firstNumber + " " + operator + " " + secondNumber;
+        if (operator) {
+            // second number
+            secondNumber = currentNumber;
+            display.textContent = `${firstNumber} ${operator} ${secondNumber}`;
         } else {
-            display.textContent = currentNumber;
+            // first number
+            firstNumber = currentNumber;
+            display.textContent = firstNumber;
         }
     });
 });
@@ -32,37 +38,49 @@ digits.forEach(button => {
 // operator buttons
 operatorButtons.forEach(button => {
     button.addEventListener("click", () => {
-        if (currentNumber === "" && firstNumber !== "") {
-            // change operator if user clicks operator consecutively
-            operator = button.textContent;
-            display.textContent = firstNumber + " " + operator
-            return;
-        }
-
-        if (firstNumber !== "" && operator !== "") {
-            // support continuous calculations
-            secondNumber = currentNumber;
+        if (firstNumber && secondNumber) {
+            // do intermediate calculation
             const result = operate(firstNumber, operator, secondNumber);
-            display.textContent = result + " " + button.textContent;
             firstNumber = result;
-        } else {
-            firstNumber = currentNumber;
+            secondNumber = "";
+            currentNumber = "";
         }
 
         operator = button.textContent;
+        display.textContent = `${firstNumber} ${operator}`;
         currentNumber = "";
     });
 });
 
+function operate(a, operator, b) {
+    a = Number(a);
+    b = Number(b);
+
+    switch (operator) {
+        case "+": return a + b;
+        case "-": return a - b;
+        case "✕": return a * b;
+        case "÷": return b === 0 ? "ERROR": a / b;
+    }
+}
+
 // equals button
 equalButton.addEventListener("click", () => {
-    if (operator === "" || currentNumber === "") return;
+    if (!firstNumber || !operator || !currentNumber) return;
 
     secondNumber = currentNumber;
-    const result = operate(firstNumber, operator, secondNumber);
+    let result = operate(firstNumber, operator, secondNumber);
+
+    if (typeof result === "number") {
+        result = Number.isInteger(result) ? result : parseFloat(result.toFixed(6));
+    }
+
     display.textContent = result;
-    currentNumber = result;
-    firstNumber = "";
+
+    // keep result for further calculation
+    firstNumber = result;
+    secondNumber = "";
+    currentNumber = "";
     operator = "";
 });
 
@@ -74,17 +92,3 @@ clearButton.addEventListener("click", () => {
     currentNumber = "";
     display.textContent = "0";
 });
-
-// operate function
-function operate(a, operator, b) {
-    a = Number(a);
-    b = Number(b);
-
-    switch (operator) {
-        case "+": return a + b;
-        case "-": return a - b;
-        case "✕": return a * b;
-        case "÷": return b === 0 ? "ERROR" : a / b;
-        default: return null;
-    }
-}
